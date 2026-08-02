@@ -12,36 +12,83 @@ datasource db {
   provider = "postgresql"
 }
 
+// ==========================================
+// 1. AUTHENTICATION & SECURITY
+// ==========================================
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String // bcrypt hashed password
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ==========================================
+// 2. PROFILE & ABOUT ME
+// ==========================================
 model Profile {
-  id        Int      @id @default(1)
+  id        Int      @id @default(1) // Singleton row (always ID 1)
   headline  String
   aboutMe   String   @db.Text
+  avatarUrl String? // Links to Supabase Storage MediaAsset
+  location  String   @default("Dhaka, Bangladesh")
   updatedAt DateTime @updatedAt
 }
 
+// ==========================================
+// 3. SKILLS TAXONOMY
+// ==========================================
 model SkillCategory {
   id     String  @id @default(uuid())
-  name   String  @unique
+  name   String  @unique // e.g., "Frontend", "Backend", "DevOps"
   order  Int     @default(0)
   skills Skill[]
 }
 
 model Skill {
   id         String        @id @default(uuid())
-  name       String
+  name       String // e.g., "Next.js (App Router)"
   categoryId String
   category   SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
+// ==========================================
+// 4. EMPLOYMENT HISTORY
+// ==========================================
 model Employment {
   id               String   @id @default(uuid())
   role             String
   organization     String
-  duration         String
-  responsibilities String[]
+  duration         String // e.g., "Nov 2025 - Present"
+  responsibilities String[] // Array of bullet points
   order            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
+// ==========================================
+// 5. PROJECTS (PORTFOLIO CASE STUDIES)
+// ==========================================
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String   @db.Text
+  thumbnail   String? // URL from Supabase Storage
+  liveUrl     String?
+  githubUrl   String?
+  tags        String[] // ["Next.js", "Prisma", "TypeScript"]
+  isFeatured  Boolean  @default(false)
+  isPublished Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// 6. EDUCATION
+// ==========================================
 model Education {
   id        String @id @default(uuid())
   degree    String
@@ -50,11 +97,99 @@ model Education {
   order     Int    @default(0)
 }
 
+// ==========================================
+// 7. CERTIFICATIONS
+// ==========================================
 model Certification {
-  id          String @id @default(uuid())
-  name        String
-  institute   String
-  duration    String
-  description String @db.Text
-  order       Int    @default(0)
+  id            String  @id @default(uuid())
+  name          String
+  institute     String
+  duration      String
+  description   String  @db.Text
+  credentialUrl String? // External verification link
+  order         Int     @default(0)
+}
+
+// ==========================================
+// 8. MEDIA LIBRARY (SUPABASE STORAGE TRACKER)
+// ==========================================
+model MediaAsset {
+  id        String   @id @default(uuid())
+  fileName  String
+  fileUrl   String   @unique // Supabase Storage public URL
+  fileType  String // e.g., "image/png", "application/pdf"
+  fileSize  Int // Bytes
+  altText   String?
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// 9. RESUME MANAGEMENT
+// ==========================================
+model Resume {
+  id          String   @id @default(uuid())
+  versionName String // e.g., "Full-Stack-Resume-2026-v2.pdf"
+  fileUrl     String // Supabase Storage URL
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// ==========================================
+// 10. CONTACT MESSAGES (INBOX)
+// ==========================================
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// 11. SEO SETTINGS
+// ==========================================
+model SeoSetting {
+  id         Int      @id @default(1) // Singleton row
+  metaTitle  String
+  metaDesc   String
+  ogImageUrl String?
+  keywords   String[] // ["PENN Stack", "Software Engineer", "Dhaka"]
+  updatedAt  DateTime @updatedAt
+}
+
+// ==========================================
+// 12. SITE SETTINGS
+// ==========================================
+model SiteSetting {
+  id              Int      @id @default(1) // Singleton row
+  siteName        String   @default("Sumit Dev Nath - Portfolio")
+  maintenanceMode Boolean  @default(false)
+  githubUrl       String?
+  linkedinUrl     String?
+  twitterUrl      String?
+  updatedAt       DateTime @updatedAt
+}
+
+// ==========================================
+// 13. ANALYTICS EVENTS
+// ==========================================
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  eventType String // e.g., "PAGE_VIEW", "RESUME_DOWNLOAD", "PROJECT_CLICK"
+  path      String? // e.g., "/projects/erp-platform"
+  metadata  String? // JSON string for extra properties
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// 14. ACTIVITY AUDIT LOGS
+// ==========================================
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String // e.g., "CREATE_PROJECT", "UPDATE_PROFILE", "DELETE_SKILL"
+  entity    String // e.g., "Project", "Skill", "Resume"
+  details   String   @db.Text // Descriptive message of what changed
+  createdAt DateTime @default(now())
 }

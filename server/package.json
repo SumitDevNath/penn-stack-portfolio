@@ -4,7 +4,7 @@
   "description": "Express + TypeScript + Prisma backend for Sumit Dev Nath's portfolio",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only --exit-child src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc --project tsconfig.json",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",

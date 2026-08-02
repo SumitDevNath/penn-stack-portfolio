@@ -1,37 +1,93 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
-// 1. Create the PostgreSQL driver adapter using your Supabase DATABASE_URL
+// Initialize PostgreSQL driver adapter for Prisma 7 + Supabase
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
 });
 
-// 2. Pass the adapter into PrismaClient
 const prisma = new PrismaClient({ adapter });
-async function main() {
-  console.log("🌱 Starting database seed...");
 
-  // 1. Clean existing tables (in order of relations to prevent foreign-key errors)
+async function main() {
+  console.log("🌱 Starting 14-Module Headless CMS seed...");
+
+  // 1. Clean existing tables (in order of foreign-key dependencies)
+  await prisma.activityLog.deleteMany();
+  await prisma.analyticsEvent.deleteMany();
+  await prisma.contactMessage.deleteMany();
+  await prisma.resume.deleteMany();
+  await prisma.mediaAsset.deleteMany();
+  await prisma.certification.deleteMany();
+  await prisma.education.deleteMany();
+  await prisma.project.deleteMany();
+  await prisma.employment.deleteMany();
   await prisma.skill.deleteMany();
   await prisma.skillCategory.deleteMany();
-  await prisma.employment.deleteMany();
-  await prisma.education.deleteMany();
-  await prisma.certification.deleteMany();
   await prisma.profile.deleteMany();
+  await prisma.seoSetting.deleteMany();
+  await prisma.siteSetting.deleteMany();
+  await prisma.adminUser.deleteMany();
 
-  // 2. Seed Profile
+  // 2. Seed AdminUser (For Part 2.2 - Secret Admin Dashboard Login)
+  const defaultPassword = "AdminSecret2026!";
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+  await prisma.adminUser.create({
+    data: {
+      email: "admin@example.com", // Change this in production
+      name: "Sumit Dev Nath",
+      passwordHash: hashedPassword,
+    },
+  });
+  console.log("✅ AdminUser seeded (Email: admin@example.com)");
+
+  // 3. Seed Singleton Profile (ID 1)
   await prisma.profile.create({
     data: {
       id: 1,
       headline: "Full-Stack Software Engineer & Tech Associate",
       aboutMe:
         "Experienced Full-Stack Software Engineer specializing in modern scalable web applications using the PENN stack (PostgreSQL, Express, Next.js, Node.js). Skilled in building responsive user interfaces, robust backend APIs, and integrating AI/LLM capabilities into production environments.",
+      location: "Dhaka, Bangladesh",
     },
   });
   console.log("✅ Profile seeded.");
 
-  // 3. Seed Skill Categories & Skills
+  // 4. Seed SEO Settings (Singleton ID 1)
+  await prisma.seoSetting.create({
+    data: {
+      id: 1,
+      metaTitle: "Sumit Dev Nath | Full-Stack Software Engineer",
+      metaDesc:
+        "Portfolio and Headless CMS of Sumit Dev Nath, Full-Stack Engineer specializing in Next.js, Express, PostgreSQL, and AI integrations.",
+      keywords: [
+        "Sumit Dev Nath",
+        "Full-Stack Engineer",
+        "PENN Stack",
+        "Next.js",
+        "Dhaka",
+        "Bangladesh",
+        "Software Engineer",
+      ],
+    },
+  });
+  console.log("✅ SEO Settings seeded.");
+
+  // 5. Seed Site Settings (Singleton ID 1)
+  await prisma.siteSetting.create({
+    data: {
+      id: 1,
+      siteName: "Sumit Dev Nath - Portfolio",
+      maintenanceMode: false,
+      githubUrl: "https://github.com",
+      linkedinUrl: "https://linkedin.com",
+    },
+  });
+  console.log("✅ Site Settings seeded.");
+
+  // 6. Seed Skill Categories & Skills
   const categoriesWithSkills = [
     {
       name: "Frontend",
@@ -124,7 +180,7 @@ async function main() {
   }
   console.log("✅ Skills & Categories seeded.");
 
-  // 4. Seed Employment
+  // 7. Seed Employment
   await prisma.employment.createMany({
     data: [
       {
@@ -142,7 +198,40 @@ async function main() {
   });
   console.log("✅ Employment seeded.");
 
-  // 5. Seed Education
+  // 8. Seed Projects (Case Studies)
+  await prisma.project.createMany({
+    data: [
+      {
+        title: "Multi-Tenant EdTech ERP Platform",
+        slug: "edtech-erp-platform",
+        description:
+          "A comprehensive multi-tenant SaaS ERP system for academic institutions supporting Edexcel and Dhaka Board curriculums, role-based access control, and class/section scheduling.",
+        tags: [
+          "Next.js 16",
+          "Prisma ORM",
+          "PostgreSQL",
+          "TypeScript",
+          "Tailwind CSS",
+        ],
+        isFeatured: true,
+        isPublished: true,
+        order: 1,
+      },
+      {
+        title: "BIRL Corporate Web Architecture & Portal",
+        slug: "birl-corporate-portal",
+        description:
+          "High-performance corporate web portal optimized for mobile responsiveness and SEO, featuring dynamic content delivery and custom landing page architectures.",
+        tags: ["React 19", "Vite", "Tailwind CSS", "SEO Optimization"],
+        isFeatured: true,
+        isPublished: true,
+        order: 2,
+      },
+    ],
+  });
+  console.log("✅ Projects seeded.");
+
+  // 9. Seed Education
   await prisma.education.createMany({
     data: [
       {
@@ -155,7 +244,7 @@ async function main() {
   });
   console.log("✅ Education seeded.");
 
-  // 6. Seed Certifications
+  // 10. Seed Certifications
   await prisma.certification.create({
     data: {
       name: "Foundations of Bioinformatics & Unix/Linux",
@@ -168,7 +257,28 @@ async function main() {
   });
   console.log("✅ Certifications seeded.");
 
-  console.log("🎉 Seed completed successfully!");
+  // 11. Seed Active Resume Placeholder
+  await prisma.resume.create({
+    data: {
+      versionName: "Sumit-Dev-Nath-Resume-2026.pdf",
+      fileUrl: "https://example.com/placeholder-resume.pdf",
+      isActive: true,
+    },
+  });
+  console.log("✅ Active Resume placeholder seeded.");
+
+  // 12. Seed Initial Activity Log
+  await prisma.activityLog.create({
+    data: {
+      action: "SYSTEM_SEED",
+      entity: "Database",
+      details:
+        "Initialized 14-module database schema with starter portfolio content.",
+    },
+  });
+  console.log("✅ Audit Activity Log seeded.");
+
+  console.log("🎉 14-Module CMS Seed completed successfully!");
 }
 
 main()
